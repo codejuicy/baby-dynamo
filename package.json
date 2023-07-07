@@ -1,0 +1,25 @@
+{
+    "name": "dynamodb-client",
+    "version": "0.0.1",
+    "description": "A simple DynamoDB client for Node.js",
+    "main": "index.js",
+    "homepage": "https://https://github.com/codejuicy/dynamo-client",
+    "repository": "git://github.com/https://github.com/codejuicy/dynamo-client",
+    "keywords": [
+        "dynamodb",
+        "aws",
+        "client",
+        "database",
+        "nosql"
+    ],
+    "author": "codejuicy <codethejuicy@gmail.com>",
+    "license": "MIT",
+    "engines": {
+        "npm": ">=6",
+        "node": ">=12"
+    },
+    "dependencies": {
+        "@aws-sdk/client-dynamodb":"^3.363.0",
+        "@aws-sdk/lib-dynamodb": "^3.363.0"
+    }
+}
