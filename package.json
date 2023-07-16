@@ -3,8 +3,8 @@
     "version": "0.0.1",
     "description": "A simple DynamoDB client for Node.js",
     "main": "index.js",
-    "homepage": "https://https://github.com/codejuicy/dynamo-client",
-    "repository": "git://github.com/https://github.com/codejuicy/dynamo-client",
+    "homepage": "https://https://github.com/codejuicy/baby-dynamo",
+    "repository": "git://github.com/https://github.com/codejuicy/baby-dynamo",
     "keywords": [
         "dynamodb",
         "aws",
