@@ -8,32 +8,12 @@ import {
   QueryCommand,
   PutCommand,
   UpdateCommand,
-  ScanCommand
+  ScanCommand,
+  DeleteCommand
 } from '@aws-sdk/lib-dynamodb'
 
-const ddbClient = new DynamoDBClient({
-  region: process.env.AWS_REGION || 'us-east-1',
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID
-})
-
-const marshallOptions = {
-  convertEmptyValues: false,
-  removeUndefinedValues: true,
-  convertClassInstanceToMap: false
-}
-
-const unmarshallOptions = {
-  wrapNumbers: false
-}
-
-const ddbDocClient = DynamoDBDocumentClient.from(ddbClient, {
-  marshallOptions,
-  unmarshallOptions
-})
-
 class DynamoClient {
-  constructor () {
+  constructor (ddbDocClient) {
     this.ddbDocClient = ddbDocClient
     this.isInited = false
     this.tableSchemas = {}
@@ -70,10 +50,15 @@ class DynamoClient {
         item[key] = null
       }
     }
-    const command = new PutCommand({
+    const commandObj = {
       TableName: table,
       Item: obj
-    })
+    }
+    // throw an error if an item with the partition key already exists
+    if (this.tableSchemas[table].partitionKey && !this.tableSchemas[table].sortKey) {
+      commandObj.ConditionExpression = 'attribute_not_exists(' + this.tableSchemas[table].partitionKey + ')'
+    }
+    const command = new PutCommand(commandObj)
     await this.ddbDocClient.send(command)
   }
 
@@ -214,6 +199,43 @@ class DynamoClient {
     })
     await this.ddbDocClient.send(command)
   }
+
+  async delete (table, predicate) {
+    await this.init()
+
+    const keyDict = {}
+    for (const key in predicate) {
+      if (
+        key === this.tableSchemas[table].partitionKey ||
+        key === this.tableSchemas[table].sortKey
+      ) {
+        keyDict[key] = predicate[key].toString()
+      }
+    }
+    const command = new DeleteCommand({
+      TableName: table,
+      Key: keyDict
+    })
+    await this.ddbDocClient.send(command)
+  }
 }
 
-export default new DynamoClient()
+export const connect = ({ region, secretAccessKey, accessKeyId }) => {
+  const ddbClient = new DynamoDBClient({ region, secretAccessKey, accessKeyId })
+
+  const marshallOptions = {
+    convertEmptyValues: false,
+    removeUndefinedValues: true,
+    convertClassInstanceToMap: false
+  }
+
+  const unmarshallOptions = {
+    wrapNumbers: false
+  }
+
+  const ddbDocClient = DynamoDBDocumentClient.from(ddbClient, {
+    marshallOptions,
+    unmarshallOptions
+  })
+  return new DynamoClient(ddbDocClient)
+}
