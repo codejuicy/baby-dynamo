@@ -19,7 +19,7 @@ class DynamoClient {
     this.tableSchemas = {}
   }
 
-  async init () {
+  async #init () {
     if (this.isInited) {
       return
     }
@@ -40,8 +40,16 @@ class DynamoClient {
     this.isInited = true
   }
 
+  #ensureTableExists (table) {
+    if (!this.tableSchemas[table]) {
+      throw new Error('Table does not exist: ' + table)
+    }
+  }
+
   async insert (table, obj) {
-    await this.init()
+    await this.#init()
+    this.#ensureTableExists(table)
+
     const item = {}
     for (const key in obj) {
       if (obj[key]) {
@@ -120,7 +128,9 @@ class DynamoClient {
   }
 
   async query (table, predicate, isSingle, attributesToGet) {
-    await this.init()
+    await this.#init()
+    this.#ensureTableExists(table)
+
     const keyConditionExpressionParts = []
     const expressionAttributeValues = {}
     let useScan = true
@@ -185,7 +195,8 @@ class DynamoClient {
   }
 
   async update (table, predicate, obj) {
-    await this.init()
+    await this.#init()
+    this.#ensureTableExists(table)
 
     const keyDict = {}
     const expressionAttributeValues = {}
@@ -225,7 +236,8 @@ class DynamoClient {
   }
 
   async delete (table, predicate) {
-    await this.init()
+    await this.#init()
+    this.#ensureTableExists(table)
 
     const keyDict = {}
     for (const key in predicate) {
