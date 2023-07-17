@@ -1,6 +1,6 @@
 {
     "name": "baby-dynamo",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "description": "A simple DynamoDB client for Node.js",
     "main": "index.js",
     "homepage": "https://https://github.com/codejuicy/baby-dynamo",

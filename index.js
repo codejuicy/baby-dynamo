@@ -82,7 +82,7 @@ class DynamoClient {
       ExpressionAttributeValues: expressionAttributeValues
     }
     if (attributesToGet) {
-      commandObj.AttributesToGet = attributesToGet
+      commandObj.ProjectionExpression = attributesToGet.join(',')
     }
     let res = await this.ddbDocClient.send(
       new QueryCommand(commandObj)
@@ -96,7 +96,7 @@ class DynamoClient {
         ExclusiveStartKey: res.LastEvaluatedKey
       }
       if (attributesToGet) {
-        commandObj.AttributesToGet = attributesToGet
+        commandObj.ProjectionExpression = attributesToGet.join(',')
       }
       res = await this.ddbDocClient.send(
         new QueryCommand(commandObj)
