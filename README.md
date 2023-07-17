@@ -27,7 +27,7 @@ At the `connect` time, the library will scan over all tables associated with you
 
     const user = await db.query(
       process.env.USERS_TABLE,
-      { email: 'user@example.com' },
+      { user_id: '123' },
       true // returns single item?
     )
 
@@ -35,6 +35,13 @@ At the `connect` time, the library will scan over all tables associated with you
       process.env.USERS_TABLE,
       { is_active: true },
       false // returns single item?
+    )
+
+    const allUsersOnlyEmail = await db.query(
+      process.env.USERS_TABLE,
+      { is_active: true },
+      false, // returns single item?
+      ['email'] // attributes to return
     )
 
     await db.update(
@@ -47,3 +54,4 @@ At the `connect` time, the library will scan over all tables associated with you
       process.env.USERS_TABLE,
       { user_id: '123' }
     )
+

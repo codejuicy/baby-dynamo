@@ -62,51 +62,64 @@ class DynamoClient {
     await this.ddbDocClient.send(command)
   }
 
-  async queryInternal (
+  async #queryInternal (
     table,
     keyConditionExpression,
-    expressionAttributeValues
+    expressionAttributeValues,
+    attributesToGet
   ) {
+    let commandObj = {
+      TableName: table,
+      KeyConditionExpression: keyConditionExpression,
+      ExpressionAttributeValues: expressionAttributeValues
+    }
+    if (attributesToGet) {
+      commandObj.AttributesToGet = attributesToGet
+    }
     let res = await this.ddbDocClient.send(
-      new QueryCommand({
+      new QueryCommand(commandObj)
+    )
+    let items = res.Items
+    while (res.LastEvaluatedKey) {
+      commandObj = {
         TableName: table,
         KeyConditionExpression: keyConditionExpression,
-        ExpressionAttributeValues: expressionAttributeValues
-      })
-    )
-    let items = res.Items
-    while (res.LastEvaluatedKey) {
+        ExpressionAttributeValues: expressionAttributeValues,
+        ExclusiveStartKey: res.LastEvaluatedKey
+      }
+      if (attributesToGet) {
+        commandObj.AttributesToGet = attributesToGet
+      }
       res = await this.ddbDocClient.send(
-        new QueryCommand({
-          TableName: table,
-          KeyConditionExpression: keyConditionExpression,
-          ExpressionAttributeValues: expressionAttributeValues,
-          ExclusiveStartKey: res.LastEvaluatedKey
-        })
+        new QueryCommand(commandObj)
       )
       items = items.concat(res.Items)
     }
     return items
   }
 
-  async scanInternal (table) {
+  async #scanInternal (table) {
+    let commandObj = {
+      TableName: table
+    }
     let res = await this.ddbDocClient.send(
-      new ScanCommand({ TableName: table })
+      new ScanCommand(commandObj)
     )
     let items = res.Items
     while (res.LastEvaluatedKey) {
+      commandObj = {
+        TableName: table,
+        ExclusiveStartKey: res.LastEvaluatedKey
+      }
       res = await this.ddbDocClient.send(
-        new ScanCommand({
-          TableName: table,
-          ExclusiveStartKey: res.LastEvaluatedKey
-        })
+        new ScanCommand(commandObj)
       )
       items = items.concat(res.Items)
     }
     return items
   }
 
-  async query (table, predicate, isSingle) {
+  async query (table, predicate, isSingle, attributesToGet) {
     await this.init()
     const keyConditionExpressionParts = []
     const expressionAttributeValues = {}
@@ -126,12 +139,13 @@ class DynamoClient {
 
     let items = []
     if (useScan) {
-      items = await this.scanInternal(table)
+      items = await this.#scanInternal(table)
     } else {
-      items = await this.queryInternal(
+      items = await this.#queryInternal(
         table,
         keyConditionExpression,
-        expressionAttributeValues
+        expressionAttributeValues,
+        attributesToGet
       )
     }
     if (items.length === 0 && isSingle) {
@@ -152,7 +166,17 @@ class DynamoClient {
           continue
         }
       }
-      reducedItems.push(item)
+      if (attributesToGet) {
+        const reducedItem = {}
+        for (const key of attributesToGet) {
+          if (item[key] !== undefined) {
+            reducedItem[key] = item[key]
+          }
+        }
+        reducedItems.push(reducedItem)
+      } else {
+        reducedItems.push(item)
+      }
     }
     if (isSingle) {
       return reducedItems[0]
